@@ -2,14 +2,14 @@
 #
 # EOF (end-of-file) token is used to indicate that
 # there is no more input left for lexical analysis
-INTEGER, PLUS, MINUS, EOF = 'INTEGER', 'PLUS', 'MINUS', 'EOF',
+INTEGER, PLUS, MINUS, MULTIPLY, DIVISON, EOF = 'INTEGER', 'PLUS', 'MINUS', 'MULTIPLY', 'DIVISON', 'EOF',
 
 
 class Token(object):
     def __init__(self, type, value):
         # token type: INTEGER, PLUS, or EOF
         self.type = type
-        # token value: 0, 1, 2. 3, 4, 5, 6, 7, 8, 9, '+', or None
+        # token value: 0, 1, 2. 3, 4, 5, 6, 7, 8, 9, '+', '-', '*', '/' or None
         self.value = value
 
     def __str__(self):
@@ -86,6 +86,16 @@ class Interpreter(object):
             self.pos += 1
             return Token(MINUS, current_char)
 
+        # if statement to handle multiplication sign
+        if current_char == '*':
+            self.pos += 1
+            return Token(MULTIPLY, current_char)
+
+        # if statement to handle division sign
+        if current_char == '/':
+            self.pos += 1
+            return Token(DIVISON, current_char)
+
 
         self.error()
 
@@ -107,41 +117,38 @@ class Interpreter(object):
         # we expect the current token to be a single-digit integer
         left = self.current_token
         self.eat(INTEGER)
+        result = left.value
 
-        # we expect the current token to be a '+' token
-        op = self.current_token
-        add = False
-        subtract = False
-        if op.type == PLUS:
-            add = True
-            self.eat(PLUS)
-        elif op.type == MINUS:
-            subtract = True
-            self.eat(MINUS)
+        while op.type in (PLUS, MINUS, MULTIPLY, DIVISON):
+            op = self.current_token
+            if op.type == PLUS:
+                self.eat(PLUS)
+                right = self.current_token
+                self.eat(INTEGER)
+                result = result + right.value
+            elif op.type == MINUS:
+                self.eat(MINUS)
+                right = self.current_token
+                self.eat(INTEGER)
+                result = result - right.value
+            elif op.type == MULTIPLY:
+                self.eat(MULTIPLY)
+                right = self.current_token
+                self.eat(INTEGER)
+                result = result * right.value
+            elif op.type == DIVISON:
+                self.eat(DIVISON)
+                right = self.current_token
+                self.eat(INTEGER)
+                result = result // right.value
 
-        # we expect the current token to be a single-digit integer
-        right = self.current_token
-        self.eat(INTEGER)
-        # after the above call the self.current_token is set to
-        # EOF token
-
-        # at this point INTEGER PLUS INTEGER sequence of tokens
-        # has been successfully found and the method can just
-        # return the result of adding two integers, thus
-        # effectively interpreting client input
-        if add == True:
-            result = left.value + right.value
-        elif subtract == True:
-            result = left.value - right.value
-        
         return result
+        
 
 
 def main():
     while True:
         try:
-            # To run under Python3 replace 'raw_input' call
-            # with 'input'
             text = input('calc> ')
         except EOFError:
             break
